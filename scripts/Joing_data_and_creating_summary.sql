@@ -50,15 +50,53 @@ or l.code = 'GEO' or l.code = 'AZE'
 group by code
 order by number_of_languages desc;
 
--- calculating  average life expectancy
+-- calculating  average life expectancy in middle east (Armenia is here)
 select c.name as country, c.region as region, AVG( p.fertility_rate )as fertility_rate , 
 AVG(p.life_expectancy) as life_exp, AVG(p.size) as population
 from countries c
 left join 
 populations p
 on c.code = p.country_code 
-group by c.name, c.region;
+group by c.name, c.region
+having c.region = 'Middle East'
+order by population desc;
 
- 
+-- counting usage of currencies
+select curr_code, count(*) as usage
+from currencies 
+group by curr_code
+having count(*) >= 2
+order by usage desc;
+
+-- returning biggest surface area and size for each region for 2015 year and calculating 
+select name, region, surface_area, size as population,
+(size/ surface_area) as population_density
+from countries
+left join populations 
+on countries.code = populations.country_code
+where surface_area in(select MAX(surface_area) 
+from countries
+group by region) 
+and populations.year = 2015
+order by population_density desc;
+
+
+-- partition by region
+select distinct(region),  MIN(surface_area) over (partition by region) as minimum_surface_area,
+AVG(surface_area) over (partition by region) as average_surface_area,
+MAX(surface_area) over (partition by region) as maximum_surface_area
+from countries;
+
+
+-- subquery in from statement for counting usage of currencies
+select countries.name as country, sub.currency as currency_count
+from countries,
+(SELECT code, COUNT(*) AS currency
+  	 FROM currencies 
+  	 GROUP BY code
+  	 having count(*) >= 2) AS sub
+  WHERE countries.code = sub.code
+ORDER BY currency_count desc;
+
 
 
